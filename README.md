@@ -100,34 +100,6 @@ Contributions are welcome! Please follow these steps:
 ## 📄 License
 Distributed under the MIT License. See `LICENSE` for more information.
 
-## 📧 Contact
-For questions or feedback, please use the contact form in the application or email: your.email@example.com
 
----
 
-Made with ❤️ by [Your Name] | [Live Demo](#) <!-- Add your demo link -->
-```
-
-### Key Sections Included:
-1. **Project Title & Tagline** with emoji
-2. **Features** list with icons
-3. **Technology Stack** with badges
-4. **Installation Instructions**
-5. **Project Structure** visualization
-6. **Mock Authentication** details
-7. **Data Persistence** explanation
-8. **Contribution Guidelines**
-9. **License & Contact** information
-
-You can customize:
-- Add your own screenshots
-- Update the contact information
-- Modify the technology stack as needed
-- Include additional sections like "Roadmap" or "Known Issues" if applicable
-
-The markdown includes:
-- GitHub-style emojis
-- SVG badges for technologies
-- Clear code blocks for commands
-- Visual directory structure
-- Responsive formatting
+Made with ❤️ by Faizuddin <!-- Add your demo link -->
