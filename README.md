@@ -1,6 +1,6 @@
 Here's a comprehensive `README.md` file for your Banking Management System project in Markdown format:
 
-```markdown
+
 # 🏦 Banking Management System (Frontend Only)
 
 A modern, responsive banking application built with **React.js** and **Tailwind CSS**, featuring dummy data simulation and localStorage persistence. No backend required!
