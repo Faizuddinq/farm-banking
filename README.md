@@ -5,8 +5,27 @@ Here's a comprehensive `README.md` file for your Banking Management System proje
 
 A modern, responsive banking application built with **React.js** and **Tailwind CSS**, featuring dummy data simulation and localStorage persistence. No backend required!
 
-![Banking System Screenshot](./screenshot.png) <!-- Add your screenshot here -->
-
+![Banking System Screenshot](./screenshot.png) 
+<!-- Add your screenshot here -->
+## Screenshots
+<table>
+  <tr>
+    <td><img src="screenshots/ss1.png" alt="Screenshot 1" width="600" height="300"/></td>
+    <td><img src="screenshots/ss2.png" alt="Screenshot 2" width="600" height="300"/></td>
+  </tr>
+  <tr>
+    <td><img src="screenshots/ss3.png" alt="Screenshot 3" width="600" height="300"/></td>
+    <td><img src="screenshots/ss4.png" alt="Screenshot 4" width="600" height="300"/></td>
+  </tr>
+  <tr>
+    <td><img src="screenshots/ss5.png" alt="Screenshot 5" width="600" height="300"/></td>
+    <td><img src="screenshots/ss6.png" alt="Screenshot 6" width="600" height="300"/></td>
+  </tr>
+  <tr>
+    <td><img src="screenshots/ss7.png" alt="Screenshot 7" width="600" height="300"/></td>
+    <td><img src="screenshots/ss8.png" alt="Screenshot 8" width="600" height="300"/></td>
+  </tr>
+</table>
 ## ✨ Features
 
 - 💳 **User Authentication** (Mock JWT)
