@@ -5,7 +5,7 @@ Here's a comprehensive `README.md` file for your Banking Management System proje
 
 A modern, responsive banking application built with **React.js** and **Tailwind CSS**, featuring dummy data simulation and localStorage persistence. No backend required!
 
-![Banking System Screenshot](./screenshot.png) 
+
 <!-- Add your screenshot here -->
 ## Screenshots
 <table>
