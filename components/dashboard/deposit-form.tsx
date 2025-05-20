@@ -16,13 +16,30 @@ export default function DepositForm() {
   const [amount, setAmount] = useState("")
   const [description, setDescription] = useState("")
   const [isLoading, setIsLoading] = useState(false)
-  const { deposit } = useBanking()
+  const { deposit, activeAccount } = useBanking()
   const { toast } = useToast()
+
+  // Add safety check for when activeAccount is undefined
+  if (!activeAccount) {
+    return (
+      <Card className="mx-auto max-w-md">
+        <CardHeader>
+          <CardTitle>Deposit Funds</CardTitle>
+          <CardDescription>Loading account information...</CardDescription>
+        </CardHeader>
+        <CardContent className="flex items-center justify-center py-10">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </CardContent>
+      </Card>
+    )
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (!amount || Number.parseFloat(amount) <= 0) {
+    const depositAmount = Number.parseFloat(amount)
+
+    if (!amount || depositAmount <= 0) {
       toast({
         variant: "destructive",
         title: "Invalid amount",
@@ -37,16 +54,15 @@ export default function DepositForm() {
       // Simulate API call delay
       await new Promise((resolve) => setTimeout(resolve, 1000))
 
-      await deposit(Number.parseFloat(amount), description || "Deposit")
+      const success = await deposit(depositAmount, description || "Deposit")
 
-      toast({
-        title: "Deposit successful",
-        description: `$${Number.parseFloat(amount).toFixed(2)} has been deposited to your account.`,
-      })
+      if (success) {
+        // Toast is now handled in the deposit function
 
-      // Reset form
-      setAmount("")
-      setDescription("")
+        // Reset form
+        setAmount("")
+        setDescription("")
+      }
     } catch (error) {
       toast({
         variant: "destructive",
@@ -62,7 +78,9 @@ export default function DepositForm() {
     <Card className="mx-auto max-w-md">
       <CardHeader>
         <CardTitle>Deposit Funds</CardTitle>
-        <CardDescription>Add money to your account. Deposits are typically processed immediately.</CardDescription>
+        <CardDescription>
+          Add money to your {activeAccount.type} account. Current balance: ${activeAccount.balance.toFixed(2)}
+        </CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} id="deposit-form" className="space-y-4">

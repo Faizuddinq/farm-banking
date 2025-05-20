@@ -15,7 +15,13 @@ interface BankingContextType {
   transactions: Transaction[]
   deposit: (amount: number, description: string) => Promise<boolean>
   withdraw: (amount: number, description: string) => Promise<boolean>
-  transfer: (amount: number, recipientAccount: string, recipientName: string, description: string) => Promise<boolean>
+  transfer: (
+    amount: number,
+    recipientAccount: string,
+    recipientName: string,
+    description: string,
+    isInternal?: boolean,
+  ) => Promise<boolean>
   createAccount: (type: "checking" | "savings" | "investment", initialDeposit: number) => Promise<boolean>
   setActiveAccount: (accountId: string) => void
 }
@@ -144,6 +150,11 @@ export function BankingProvider({ children }: { children: React.ReactNode }) {
       setTimeout(() => {
         try {
           if (!user) {
+            toast({
+              variant: "destructive",
+              title: "Authentication error",
+              description: "You must be logged in to create an account.",
+            })
             resolve(false)
             return
           }
@@ -208,6 +219,16 @@ export function BankingProvider({ children }: { children: React.ReactNode }) {
     return new Promise((resolve) => {
       setTimeout(() => {
         try {
+          if (!activeAccount) {
+            toast({
+              variant: "destructive",
+              title: "Account error",
+              description: "No active account found.",
+            })
+            resolve(false)
+            return
+          }
+
           // Update account balance
           const updatedAccount = { ...activeAccount, balance: activeAccount.balance + amount }
 
@@ -237,6 +258,11 @@ export function BankingProvider({ children }: { children: React.ReactNode }) {
           localStorage.setItem("transactions", JSON.stringify(allTransactions))
           setTransactions((prev) => [...prev, newTransaction])
 
+          toast({
+            title: "Deposit successful",
+            description: `$${amount.toFixed(2)} has been deposited to your account.`,
+          })
+
           resolve(true)
         } catch (error) {
           console.error("Deposit error:", error)
@@ -256,6 +282,26 @@ export function BankingProvider({ children }: { children: React.ReactNode }) {
     return new Promise((resolve) => {
       setTimeout(() => {
         try {
+          if (!activeAccount) {
+            toast({
+              variant: "destructive",
+              title: "Account error",
+              description: "No active account found.",
+            })
+            resolve(false)
+            return
+          }
+
+          if (amount <= 0) {
+            toast({
+              variant: "destructive",
+              title: "Invalid amount",
+              description: "Withdrawal amount must be greater than zero.",
+            })
+            resolve(false)
+            return
+          }
+
           if (amount > activeAccount.balance) {
             toast({
               variant: "destructive",
@@ -295,6 +341,11 @@ export function BankingProvider({ children }: { children: React.ReactNode }) {
           localStorage.setItem("transactions", JSON.stringify(allTransactions))
           setTransactions((prev) => [...prev, newTransaction])
 
+          toast({
+            title: "Withdrawal successful",
+            description: `$${amount.toFixed(2)} has been withdrawn from your account.`,
+          })
+
           resolve(true)
         } catch (error) {
           console.error("Withdrawal error:", error)
@@ -312,13 +363,34 @@ export function BankingProvider({ children }: { children: React.ReactNode }) {
   // Transfer money to another account
   const transfer = async (
     amount: number,
-    recipientAccount: string,
+    recipientAccountId: string,
     recipientName: string,
     description: string,
+    isInternal = false,
   ): Promise<boolean> => {
     return new Promise((resolve) => {
       setTimeout(() => {
         try {
+          if (!activeAccount) {
+            toast({
+              variant: "destructive",
+              title: "Account error",
+              description: "No active account found.",
+            })
+            resolve(false)
+            return
+          }
+
+          if (amount <= 0) {
+            toast({
+              variant: "destructive",
+              title: "Invalid amount",
+              description: "Transfer amount must be greater than zero.",
+            })
+            resolve(false)
+            return
+          }
+
           if (amount > activeAccount.balance) {
             toast({
               variant: "destructive",
@@ -329,34 +401,119 @@ export function BankingProvider({ children }: { children: React.ReactNode }) {
             return
           }
 
-          // Update sender account balance
-          const updatedAccount = { ...activeAccount, balance: activeAccount.balance - amount }
+          if (isInternal && recipientAccountId === activeAccount.id) {
+            toast({
+              variant: "destructive",
+              title: "Invalid transfer",
+              description: "You cannot transfer money to the same account.",
+            })
+            resolve(false)
+            return
+          }
 
-          // Update accounts in localStorage
+          // Get all accounts from localStorage
           const storedAccounts = localStorage.getItem("accounts")
           let allAccounts: Account[] = storedAccounts ? JSON.parse(storedAccounts) : []
-          allAccounts = allAccounts.map((a) => (a.id === activeAccount.id ? updatedAccount : a))
+
+          // Update sender account balance
+          const updatedSenderAccount = { ...activeAccount, balance: activeAccount.balance - amount }
+
+          // For internal transfers, find and update the recipient account
+          let updatedRecipientAccount: Account | null = null
+
+          if (isInternal) {
+            // Find the recipient account in the user's accounts
+            const recipientAccount = allAccounts.find((a) => a.id === recipientAccountId)
+
+            if (!recipientAccount) {
+              toast({
+                variant: "destructive",
+                title: "Recipient not found",
+                description: "The recipient account could not be found.",
+              })
+              resolve(false)
+              return
+            }
+
+            // Verify the recipient account belongs to the same user
+            if (recipientAccount.userId !== user?.id) {
+              toast({
+                variant: "destructive",
+                title: "Unauthorized transfer",
+                description: "You can only transfer between your own accounts.",
+              })
+              resolve(false)
+              return
+            }
+
+            // Update recipient account balance
+            updatedRecipientAccount = {
+              ...recipientAccount,
+              balance: recipientAccount.balance + amount,
+            }
+
+            // Get recipient account type for better description
+            const recipientType = recipientAccount.type.charAt(0).toUpperCase() + recipientAccount.type.slice(1)
+            recipientName = `${recipientType} (****${recipientAccount.accountNumber.slice(-4)})`
+          }
+
+          // Update accounts in localStorage
+          allAccounts = allAccounts.map((a) => {
+            if (a.id === activeAccount.id) return updatedSenderAccount
+            if (isInternal && updatedRecipientAccount && a.id === recipientAccountId) return updatedRecipientAccount
+            return a
+          })
 
           localStorage.setItem("accounts", JSON.stringify(allAccounts))
+
+          // Update accounts state with user's accounts
           setAccounts(allAccounts.filter((a) => a.userId === user?.id))
 
-          // Create transaction record
-          const newTransaction: Transaction = {
+          // Create transaction records
+          const timestamp = new Date().toISOString()
+
+          // Sender transaction
+          const senderTransaction: Transaction = {
             id: uuidv4(),
             accountId: activeAccount.id,
             amount,
             type: "transfer",
-            description: `${description} to ${recipientName} (${recipientAccount})`,
-            date: new Date().toISOString(),
+            description: `${description} to ${recipientName}${isInternal ? " (Internal)" : ""}`,
+            date: timestamp,
+          }
+
+          // Recipient transaction (for internal transfers only)
+          let recipientTransaction: Transaction | null = null
+          if (isInternal && updatedRecipientAccount) {
+            recipientTransaction = {
+              id: uuidv4(),
+              accountId: recipientAccountId,
+              amount,
+              type: "deposit",
+              description: `Transfer from ${activeAccount.type.charAt(0).toUpperCase() + activeAccount.type.slice(1)} (****${activeAccount.accountNumber.slice(-4)})`,
+              date: timestamp,
+            }
           }
 
           // Update transactions in localStorage
           const storedTransactions = localStorage.getItem("transactions")
           const allTransactions: Transaction[] = storedTransactions ? JSON.parse(storedTransactions) : []
-          allTransactions.push(newTransaction)
+
+          allTransactions.push(senderTransaction)
+          if (recipientTransaction) allTransactions.push(recipientTransaction)
 
           localStorage.setItem("transactions", JSON.stringify(allTransactions))
-          setTransactions((prev) => [...prev, newTransaction])
+
+          // Update transactions state
+          const newTransactions = [senderTransaction]
+          if (recipientTransaction) newTransactions.push(recipientTransaction)
+
+          setTransactions((prev) => [...prev, ...newTransactions])
+
+          toast({
+            title: "Transfer successful",
+            description: `$${amount.toFixed(2)} has been transferred to ${isInternal ? "your other account" : recipientName}.`,
+          })
 
           resolve(true)
         } catch (error) {
