@@ -19,6 +19,21 @@ export default function WithdrawForm() {
   const { withdraw, activeAccount } = useBanking()
   const { toast } = useToast()
 
+  // Add safety check for when activeAccount is undefined
+  if (!activeAccount) {
+    return (
+      <Card className="mx-auto max-w-md">
+        <CardHeader>
+          <CardTitle>Withdraw Funds</CardTitle>
+          <CardDescription>Loading account information...</CardDescription>
+        </CardHeader>
+        <CardContent className="flex items-center justify-center py-10">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </CardContent>
+      </Card>
+    )
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
@@ -48,16 +63,24 @@ export default function WithdrawForm() {
       // Simulate API call delay
       await new Promise((resolve) => setTimeout(resolve, 1000))
 
-      await withdraw(withdrawAmount, description || "Withdrawal")
+      const success = await withdraw(withdrawAmount, description || "Withdrawal")
 
-      toast({
-        title: "Withdrawal successful",
-        description: `$${withdrawAmount.toFixed(2)} has been withdrawn from your account.`,
-      })
+      if (success) {
+        toast({
+          title: "Withdrawal successful",
+          description: `$${withdrawAmount.toFixed(2)} has been withdrawn from your account.`,
+        })
 
-      // Reset form
-      setAmount("")
-      setDescription("")
+        // Reset form
+        setAmount("")
+        setDescription("")
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Withdrawal failed",
+          description: "An error occurred. Please try again.",
+        })
+      }
     } catch (error) {
       toast({
         variant: "destructive",
